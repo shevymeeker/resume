@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Resume Builder</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        /* CSS variables based on your styles.css */
+        :root {
+            --primary: #3f51b5;
+            --surface: #ffffff;
+            --bg: #f5f5f5;
+            --text: #212121;
+            --border: #e0e0e0;
+        }
+
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); padding: 20px; line-height: 1.6; }
+        .container { max-width: 800px; margin: 0 auto; background: var(--surface); padding: 40px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        
+        h1, h2, h3 { color: var(--primary); }
+        h1 { text-align: center; margin-bottom: 30px; }
+        
+        .section-card { border: 1px solid var(--border); padding: 20px; margin-bottom: 20px; border-radius: 6px; position: relative; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: 600; margin-bottom: 5px; }
+        input, textarea, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        textarea { height: 100px; font-family: inherit; }
+        
+        .btn { padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; }
+        .btn-primary { background: var(--primary); color: white; width: 100%; font-size: 1.1em; margin-top: 20px; }
+        .btn-secondary { background: #e0e0e0; color: #333; margin-top: 10px; }
+        .btn-danger { background: #ff5252; color: white; position: absolute; top: 10px; right: 10px; padding: 5px 10px; font-size: 0.8em; }
+
+        .hidden { display: none; }
+        .repeater-container { margin-top: 15px; }
+        
+        /* Layout Grid */
+        .row { display: flex; gap: 20px; }
+        .col { flex: 1; }
+        @media (max-width: 600px) { .row { flex-direction: column; } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🚀 Career Intake Form</h1>
+    <p style="text-align:center; margin-bottom: 30px; color: #666;">Fill out this form to generate a recruiter-ready resume instantly.</p>
+
+    <form id="resumeForm">
+        <div class="section-card">
+            <h3>Contact Information</h3>
+            <div class="row">
+                <div class="col form-group">
+                    <label>Full Name</label>
+                    <input type="text" id="fullName" placeholder="e.g. Jane Doe" required>
+                </div>
+                <div class="col form-group">
+                    <label>Job Title Target</label>
+                    <input type="text" id="targetTitle" placeholder="e.g. Senior Project Manager">
+                </div>
+            </div>
+            <div class="row">
+                <div class="col form-group">
+                    <label>Email</label>
+                    <input type="email" id="email" required>
+                </div>
+                <div class="col form-group">
+                    <label>Phone</label>
+                    <input type="tel" id="phone">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>LinkedIn / Portfolio URL</label>
+                <input type="text" id="link">
+            </div>
+        </div>
+
+        <div class="section-card">
+            <h3>Professional Summary</h3>
+            <div class="form-group">
+                <label>Elevator Pitch (3-4 sentences)</label>
+                <textarea id="summary" placeholder="Experienced professional with 10+ years in..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>Core Skills (Comma separated)</label>
+                <input type="text" id="skills" placeholder="Project Management, Agile, SQL, Leadership...">
+            </div>
+        </div>
+
+        <div id="experienceSection">
+            <h3>Professional Experience</h3>
+            <div id="jobsContainer"></div>
+            <button type="button" class="btn btn-secondary" onclick="addJob()">+ Add Job Position</button>
+        </div>
+        <br>
+
+        <div id="educationSection">
+            <h3>Education</h3>
+            <div id="eduContainer"></div>
+            <button type="button" class="btn btn-secondary" onclick="addEducation()">+ Add Education</button>
+        </div>
+        <br>
+
+        <div class="section-card">
+            <h3>Cover Letter (Optional)</h3>
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="includeCoverLetter"> Include Cover Letter
+                </label>
+            </div>
+            <div id="coverLetterFields" class="hidden">
+                <div class="form-group">
+                    <label>Hiring Manager Name (or "Hiring Team")</label>
+                    <input type="text" id="hiringManager" value="Hiring Team">
+                </div>
+                <div class="form-group">
+                    <label>Company Applying To</label>
+                    <input type="text" id="targetCompany">
+                </div>
+                <div class="form-group">
+                    <label>Why this role? (Body text)</label>
+                    <textarea id="clBody" placeholder="I am writing to express my interest..." style="height: 150px;"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Generate PDF Resume</button>
+    </form>
+</div>
+
+<script>
+    // --- 1. Dynamic Form Logic ---
+
+    function createUUID() { return Math.random().toString(36).substring(2) + Date.now().toString(36); }
+
+    function addJob() {
+        const id = createUUID();
+        const html = `
+            <div class="section-card" id="${id}">
+                <button type="button" class="btn-danger" onclick="removeEl('${id}')">Remove</button>
+                <div class="row">
+                    <div class="col form-group"><label>Company</label><input type="text" class="job-company"></div>
+                    <div class="col form-group"><label>Job Title</label><input type="text" class="job-title"></div>
+                </div>
+                <div class="row">
+                    <div class="col form-group"><label>Start Date</label><input type="text" class="job-start" placeholder="MM/YYYY"></div>
+                    <div class="col form-group"><label>End Date</label><input type="text" class="job-end" placeholder="Present"></div>
+                </div>
+                <div class="form-group">
+                    <label>Key Achievements / Responsibilities</label>
+                    <textarea class="job-desc" placeholder="• Led a team of 5...&#10;• Increased revenue by..."></textarea>
+                </div>
+            </div>`;
+        document.getElementById('jobsContainer').insertAdjacentHTML('beforeend', html);
+    }
+
+    function addEducation() {
+        const id = createUUID();
+        const html = `
+            <div class="section-card" id="${id}">
+                <button type="button" class="btn-danger" onclick="removeEl('${id}')">Remove</button>
+                <div class="form-group"><label>School / University</label><input type="text" class="edu-school"></div>
+                <div class="form-group"><label>Degree / Certificate</label><input type="text" class="edu-degree"></div>
+                <div class="form-group"><label>Graduation Year</label><input type="text" class="edu-year"></div>
+            </div>`;
+        document.getElementById('eduContainer').insertAdjacentHTML('beforeend', html);
+    }
+
+    function removeEl(id) { document.getElementById(id).remove(); }
+
+    // Initialize with one empty job and school
+    addJob();
+    addEducation();
+
+    // Toggle Cover Letter
+    document.getElementById('includeCoverLetter').addEventListener('change', (e) => {
+        document.getElementById('coverLetterFields').classList.toggle('hidden', !e.target.checked);
+    });
+
+    // --- 2. PDF Generation Logic ---
+    
+    document.getElementById('resumeForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        generatePDF();
+    });
+
+    async function generatePDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        // Colors & Fonts
+        const primaryColor = [63, 81, 181]; // #3f51b5 form uploaded styles.css
+        const darkText = [33, 33, 33];
+        const lightText = [100, 100, 100];
+        
+        // --- DATA COLLECTION ---
+        const data = {
+            fullName: document.getElementById('fullName').value,
+            title: document.getElementById('targetTitle').value,
+            contact: [
+                document.getElementById('email').value,
+                document.getElementById('phone').value,
+                document.getElementById('link').value
+            ].filter(Boolean).join('  •  '),
+            summary: document.getElementById('summary').value,
+            skills: document.getElementById('skills').value,
+            jobs: Array.from(document.querySelectorAll('#jobsContainer .section-card')).map(el => ({
+                company: el.querySelector('.job-company').value,
+                title: el.querySelector('.job-title').value,
+                period: `${el.querySelector('.job-start').value} - ${el.querySelector('.job-end').value}`,
+                desc: el.querySelector('.job-desc').value
+            })),
+            edu: Array.from(document.querySelectorAll('#eduContainer .section-card')).map(el => ({
+                school: el.querySelector('.edu-school').value,
+                degree: el.querySelector('.edu-degree').value,
+                year: el.querySelector('.edu-year').value
+            }))
+        };
+
+        let yPos = 20;
+        const pageHeight = doc.internal.pageSize.height;
+        const margin = 20;
+        const contentWidth = doc.internal.pageSize.width - (margin * 2);
+
+        // Helper to check page break
+        const checkPageBreak = (heightNeeded) => {
+            if (yPos + heightNeeded > pageHeight - margin) {
+                doc.addPage();
+                yPos = 20;
+            }
+        };
+
+        // --- OPTIONAL COVER LETTER ---
+        if (document.getElementById('includeCoverLetter').checked) {
+            // Header
+            doc.setFontSize(22);
+            doc.setTextColor(...primaryColor);
+            doc.setFont('helvetica', 'bold');
+            doc.text(data.fullName, margin, yPos);
+            yPos += 10;
+            
+            doc.setFontSize(10);
+            doc.setTextColor(...darkText);
+            doc.setFont('helvetica', 'normal');
+            doc.text(data.contact, margin, yPos);
+            yPos += 20;
+
+            doc.setLineWidth(0.5);
+            doc.setDrawColor(...primaryColor);
+            doc.line(margin, yPos, margin + contentWidth, yPos);
+            yPos += 20;
+
+            // Content
+            const today = new Date().toLocaleDateString();
+            const manager = document.getElementById('hiringManager').value;
+            const company = document.getElementById('targetCompany').value;
+            const body = document.getElementById('clBody').value;
+
+            doc.text(today, margin, yPos);
+            yPos += 10;
+            doc.text(`Dear ${manager},`, margin, yPos);
+            yPos += 10;
+
+            const splitBody = doc.splitTextToSize(body, contentWidth);
+            doc.text(splitBody, margin, yPos);
+            
+            // Signature
+            yPos += (splitBody.length * 5) + 20;
+            doc.text("Sincerely,", margin, yPos);
+            yPos += 10;
+            doc.setFont('helvetica', 'bold');
+            doc.text(data.fullName, margin, yPos);
+
+            doc.addPage(); // Start Resume on new page
+            yPos = 20;
+        }
+
+        // --- RESUME HEADER ---
+        doc.setFontSize(24);
+        doc.setTextColor(...primaryColor);
+        doc.setFont('helvetica', 'bold');
+        doc.text(data.fullName.toUpperCase(), margin, yPos);
+        yPos += 10;
+
+        doc.setFontSize(14);
+        doc.setTextColor(...lightText);
+        doc.text(data.title.toUpperCase(), margin, yPos);
+        yPos += 8;
+
+        doc.setFontSize(10);
+        doc.setTextColor(...darkText);
+        doc.setFont('helvetica', 'normal');
+        doc.text(data.contact, margin, yPos);
+        yPos += 15;
+
+        // Line Divider
+        doc.setLineWidth(1);
+        doc.setDrawColor(...primaryColor);
+        doc.line(margin, yPos, margin + contentWidth, yPos);
+        yPos += 10;
+
+        // --- SUMMARY ---
+        if (data.summary) {
+            doc.setFontSize(12);
+            doc.setTextColor(...primaryColor);
+            doc.setFont('helvetica', 'bold');
+            doc.text("PROFESSIONAL SUMMARY", margin, yPos);
+            yPos += 7;
+
+            doc.setFontSize(10);
+            doc.setTextColor(...darkText);
+            doc.setFont('helvetica', 'normal');
+            const summaryLines = doc.splitTextToSize(data.summary, contentWidth);
+            doc.text(summaryLines, margin, yPos);
+            yPos += (summaryLines.length * 5) + 5;
+        }
+
+        // --- SKILLS ---
+        if (data.skills) {
+            checkPageBreak(20);
+            doc.setFontSize(12);
+            doc.setTextColor(...primaryColor);
+            doc.setFont('helvetica', 'bold');
+            doc.text("CORE COMPETENCIES", margin, yPos);
+            yPos += 7;
+
+            doc.setFontSize(10);
+            doc.setTextColor(...darkText);
+            doc.setFont('helvetica', 'normal');
+            const skillLines = doc.splitTextToSize(data.skills, contentWidth);
+            doc.text(skillLines, margin, yPos);
+            yPos += (skillLines.length * 5) + 5;
+        }
+
+        // --- EXPERIENCE ---
+        if (data.jobs.length > 0) {
+            checkPageBreak(20);
+            doc.setFontSize(12);
+            doc.setTextColor(...primaryColor);
+            doc.setFont('helvetica', 'bold');
+            doc.text("PROFESSIONAL EXPERIENCE", margin, yPos);
+            yPos += 10;
+
+            data.jobs.forEach(job => {
+                checkPageBreak(30);
+                
+                // Job Header line
+                doc.setFontSize(11);
+                doc.setTextColor(0, 0, 0);
+                doc.setFont('helvetica', 'bold');
+                doc.text(job.company, margin, yPos);
+                
+                doc.setFont('helvetica', 'bold');
+                doc.text(job.period, margin + contentWidth, yPos, { align: 'right' });
+                yPos += 5;
+
+                doc.setFont('helvetica', 'italic');
+                doc.setTextColor(80, 80, 80);
+                doc.text(job.title, margin, yPos);
+                yPos += 6;
+
+                // Description
+                doc.setFont('helvetica', 'normal');
+                doc.setTextColor(0, 0, 0);
+                doc.setFontSize(10);
+                const descLines = doc.splitTextToSize(job.desc, contentWidth - 5);
+                doc.text(descLines, margin + 5, yPos);
+                yPos += (descLines.length * 5) + 8;
+            });
+        }
+
+        // --- EDUCATION ---
+        if (data.edu.length > 0) {
+            checkPageBreak(30);
+            doc.setFontSize(12);
+            doc.setTextColor(...primaryColor);
+            doc.setFont('helvetica', 'bold');
+            doc.text("EDUCATION", margin, yPos);
+            yPos += 10;
+
+            data.edu.forEach(edu => {
+                checkPageBreak(15);
+                doc.setFontSize(11);
+                doc.setTextColor(0, 0, 0);
+                doc.setFont('helvetica', 'bold');
+                doc.text(edu.school, margin, yPos);
+                
+                doc.setFont('helvetica', 'normal');
+                doc.text(edu.year, margin + contentWidth, yPos, { align: 'right' });
+                yPos += 5;
+
+                doc.setFontSize(10);
+                doc.setFont('helvetica', 'italic');
+                doc.text(edu.degree, margin, yPos);
+                yPos += 10;
+            });
+        }
+
+        doc.save(`${data.fullName.replace(/\s+/g, '_')}_Resume.pdf`);
+    }
+</script>
+
+</body>
+</html>
