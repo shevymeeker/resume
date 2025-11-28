@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Professional Resume Builder</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dexie/4.0.4/dexie.min.js" integrity="sha512-+bYdV+VpK3RzHzDZ+VcjUFGxT6ob+aMWuT/nyODbJAEKaNJVb4aGrlNDQqmW+eL6F3gH1fRjuZpCbfOgv7+htw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
-        /* CSS variables based on your styles.css */
         :root {
             --primary: #3f51b5;
             --surface: #ffffff;
@@ -15,37 +15,74 @@
             --border: #e0e0e0;
         }
 
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); padding: 20px; line-height: 1.6; }
-        .container { max-width: 800px; margin: 0 auto; background: var(--surface); padding: 40px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: var(--surface);
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
         h1, h2, h3 { color: var(--primary); }
         h1 { text-align: center; margin-bottom: 30px; }
-        
-        .section-card { border: 1px solid var(--border); padding: 20px; margin-bottom: 20px; border-radius: 6px; position: relative; }
+
+        .section-card {
+            border: 1px solid var(--border);
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 6px;
+            position: relative;
+        }
+
         .form-group { margin-bottom: 15px; }
         label { display: block; font-weight: 600; margin-bottom: 5px; }
-        input, textarea, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        input, textarea, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
         textarea { height: 100px; font-family: inherit; }
-        
+
+        .helper { color: #616161; font-size: 0.9em; margin-top: 4px; display: block; }
+
         .btn { padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; }
         .btn-primary { background: var(--primary); color: white; width: 100%; font-size: 1.1em; margin-top: 20px; }
         .btn-secondary { background: #e0e0e0; color: #333; margin-top: 10px; }
         .btn-danger { background: #ff5252; color: white; position: absolute; top: 10px; right: 10px; padding: 5px 10px; font-size: 0.8em; }
 
         .hidden { display: none; }
-        .repeater-container { margin-top: 15px; }
-        
-        /* Layout Grid */
         .row { display: flex; gap: 20px; }
         .col { flex: 1; }
         @media (max-width: 600px) { .row { flex-direction: column; } }
+
+        .prompt-card { margin-top: 25px; border: 1px dashed var(--border); padding: 20px; border-radius: 6px; background: #fafafa; }
+        #promptOutput {
+            width: 100%;
+            min-height: 220px;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-family: 'Segoe UI', monospace;
+            box-sizing: border-box;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
     <h1>🚀 Career Intake Form</h1>
-    <p style="text-align:center; margin-bottom: 30px; color: #666;">Fill out this form to generate a recruiter-ready resume instantly.</p>
+    <p style="text-align:center; margin-bottom: 30px; color: #666;">Send this to your client. Every question includes a quick example to inspire strong responses.</p>
 
     <form id="resumeForm">
         <div class="section-card">
@@ -54,25 +91,30 @@
                 <div class="col form-group">
                     <label>Full Name</label>
                     <input type="text" id="fullName" placeholder="e.g. Jane Doe" required>
+                    <small class="helper">Use your legal name as you want it to appear at the top of the resume.</small>
                 </div>
                 <div class="col form-group">
                     <label>Job Title Target</label>
                     <input type="text" id="targetTitle" placeholder="e.g. Senior Project Manager">
+                    <small class="helper">Example: "Customer Success Manager | SaaS | B2B"</small>
                 </div>
             </div>
             <div class="row">
                 <div class="col form-group">
                     <label>Email</label>
                     <input type="email" id="email" required>
+                    <small class="helper">Professional email only (avoid nicknames).</small>
                 </div>
                 <div class="col form-group">
                     <label>Phone</label>
                     <input type="tel" id="phone">
+                    <small class="helper">Include country code if you apply internationally.</small>
                 </div>
             </div>
             <div class="form-group">
                 <label>LinkedIn / Portfolio URL</label>
                 <input type="text" id="link">
+                <small class="helper">Example: https://www.linkedin.com/in/janedoe or portfolio link.</small>
             </div>
         </div>
 
@@ -81,10 +123,12 @@
             <div class="form-group">
                 <label>Elevator Pitch (3-4 sentences)</label>
                 <textarea id="summary" placeholder="Experienced professional with 10+ years in..."></textarea>
+                <small class="helper">Example: "Operations lead with 12+ years scaling logistics for e-commerce brands; combines Lean, Six Sigma, and cross-functional leadership to improve delivery SLAs by 18%."</small>
             </div>
             <div class="form-group">
                 <label>Core Skills (Comma separated)</label>
                 <input type="text" id="skills" placeholder="Project Management, Agile, SQL, Leadership...">
+                <small class="helper">Example: "Program Management, Salesforce, GTM Strategy, Process Improvement, Tableau, Team Leadership"</small>
             </div>
         </div>
 
@@ -127,21 +171,36 @@
 
         <button type="submit" class="btn btn-primary">Generate PDF Resume</button>
     </form>
+
+    <div id="ownerTools" class="prompt-card hidden">
+        <h3>Private: AI Assembly Prompt</h3>
+        <p>This block stays hidden from clients. Open the page with <code>?owner=1</code> to reveal it and convert their intake into an AI-ready instruction for ATS + classic resumes.</p>
+        <button id="buildPrompt" type="button" class="btn btn-secondary">Build AI Prompt</button>
+        <button id="copyPrompt" type="button" class="btn btn-secondary" style="margin-left:10px;">Copy Prompt</button>
+        <textarea id="promptOutput" placeholder="The tailored AI prompt will appear here..."></textarea>
+    </div>
 </div>
 
 <script>
+    const RESUME_WRITER_EMAIL = 'resume@yourservice.com';
+
+    // --- 0. Offline-first storage with Dexie ---
+    const db = new Dexie('resumeIntake');
+    db.version(1).stores({ form: 'id' });
+    let isRestoring = false;
+
     // --- 1. Dynamic Form Logic ---
 
     function createUUID() { return Math.random().toString(36).substring(2) + Date.now().toString(36); }
 
-    function addJob() {
+    function addJob(jobData = {}) {
         const id = createUUID();
         const html = `
             <div class="section-card" id="${id}">
                 <button type="button" class="btn-danger" onclick="removeEl('${id}')">Remove</button>
                 <div class="row">
-                    <div class="col form-group"><label>Company</label><input type="text" class="job-company"></div>
-                    <div class="col form-group"><label>Job Title</label><input type="text" class="job-title"></div>
+                    <div class="col form-group"><label>Company</label><input type="text" class="job-company" placeholder="Acme Inc."><small class="helper">Example: "Scaled Series B SaaS startup from 120 to 350 employees."</small></div>
+                    <div class="col form-group"><label>Job Title</label><input type="text" class="job-title" placeholder="Customer Success Manager"></div>
                 </div>
                 <div class="row">
                     <div class="col form-group"><label>Start Date</label><input type="text" class="job-start" placeholder="MM/YYYY"></div>
@@ -150,36 +209,91 @@
                 <div class="form-group">
                     <label>Key Achievements / Responsibilities</label>
                     <textarea class="job-desc" placeholder="• Led a team of 5...&#10;• Increased revenue by..."></textarea>
+                    <small class="helper">Use strong metrics. Example bullet: "• Rebuilt onboarding playbook, cutting time-to-first-value from 45 to 18 days and raising NPS from 46 to 62."</small>
                 </div>
             </div>`;
         document.getElementById('jobsContainer').insertAdjacentHTML('beforeend', html);
+        const el = document.getElementById(id);
+        if (jobData.company) el.querySelector('.job-company').value = jobData.company;
+        if (jobData.title) el.querySelector('.job-title').value = jobData.title;
+        if (jobData.start) el.querySelector('.job-start').value = jobData.start;
+        if (jobData.end) el.querySelector('.job-end').value = jobData.end;
+        if (jobData.desc) el.querySelector('.job-desc').value = jobData.desc;
+        if (!isRestoring) saveFormData();
+        return el;
     }
 
-    function addEducation() {
+    function addEducation(eduData = {}) {
         const id = createUUID();
         const html = `
             <div class="section-card" id="${id}">
                 <button type="button" class="btn-danger" onclick="removeEl('${id}')">Remove</button>
-                <div class="form-group"><label>School / University</label><input type="text" class="edu-school"></div>
-                <div class="form-group"><label>Degree / Certificate</label><input type="text" class="edu-degree"></div>
-                <div class="form-group"><label>Graduation Year</label><input type="text" class="edu-year"></div>
+                <div class="form-group"><label>School / University</label><input type="text" class="edu-school" placeholder="University of Toronto"><small class="helper">Include city if helpful for location-based roles.</small></div>
+                <div class="form-group"><label>Degree / Certificate</label><input type="text" class="edu-degree" placeholder="B.A. Psychology, Minor in Business"></div>
+                <div class="form-group"><label>Graduation Year</label><input type="text" class="edu-year" placeholder="2020"></div>
             </div>`;
         document.getElementById('eduContainer').insertAdjacentHTML('beforeend', html);
+        const el = document.getElementById(id);
+        if (eduData.school) el.querySelector('.edu-school').value = eduData.school;
+        if (eduData.degree) el.querySelector('.edu-degree').value = eduData.degree;
+        if (eduData.year) el.querySelector('.edu-year').value = eduData.year;
+        if (!isRestoring) saveFormData();
+        return el;
     }
 
-    function removeEl(id) { document.getElementById(id).remove(); }
+    function removeEl(id) { const el = document.getElementById(id); if (el) el.remove(); saveFormData(); }
 
     // Initialize with one empty job and school
     addJob();
     addEducation();
 
+    // Persist form data offline
+    const resumeForm = document.getElementById('resumeForm');
+
+    async function saveFormData() {
+        if (isRestoring) return;
+        const data = collectFormData();
+        await db.form.put({ id: 'latest', ...data });
+    }
+
+    async function loadFormData() {
+        const stored = await db.form.get('latest');
+        if (!stored) return;
+        isRestoring = true;
+        document.getElementById('fullName').value = stored.fullName || '';
+        document.getElementById('targetTitle').value = stored.title || '';
+        document.getElementById('email').value = stored.email || '';
+        document.getElementById('phone').value = stored.phone || '';
+        document.getElementById('link').value = stored.link || '';
+        document.getElementById('summary').value = stored.summary || '';
+        document.getElementById('skills').value = stored.skills || '';
+
+        document.getElementById('jobsContainer').innerHTML = '';
+        (stored.jobs && stored.jobs.length ? stored.jobs : [{}]).forEach(job => addJob(job));
+
+        document.getElementById('eduContainer').innerHTML = '';
+        (stored.edu && stored.edu.length ? stored.edu : [{}]).forEach(edu => addEducation(edu));
+
+        document.getElementById('includeCoverLetter').checked = !!stored.includeCoverLetter;
+        document.getElementById('coverLetterFields').classList.toggle('hidden', !stored.includeCoverLetter);
+        document.getElementById('hiringManager').value = stored.hiringManager || 'Hiring Team';
+        document.getElementById('targetCompany').value = stored.targetCompany || '';
+        document.getElementById('clBody').value = stored.clBody || '';
+        isRestoring = false;
+    }
+
+    resumeForm.addEventListener('input', () => saveFormData());
+
     // Toggle Cover Letter
     document.getElementById('includeCoverLetter').addEventListener('change', (e) => {
         document.getElementById('coverLetterFields').classList.toggle('hidden', !e.target.checked);
+        saveFormData();
     });
 
+    loadFormData();
+
     // --- 2. PDF Generation Logic ---
-    
+
     document.getElementById('resumeForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         generatePDF();
@@ -188,13 +302,11 @@
     async function generatePDF() {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
-        
-        // Colors & Fonts
-        const primaryColor = [63, 81, 181]; // #3f51b5 form uploaded styles.css
+
+        const primaryColor = [63, 81, 181];
         const darkText = [33, 33, 33];
         const lightText = [100, 100, 100];
-        
-        // --- DATA COLLECTION ---
+
         const data = {
             fullName: document.getElementById('fullName').value,
             title: document.getElementById('targetTitle').value,
@@ -205,12 +317,18 @@
             ].filter(Boolean).join('  •  '),
             summary: document.getElementById('summary').value,
             skills: document.getElementById('skills').value,
-            jobs: Array.from(document.querySelectorAll('#jobsContainer .section-card')).map(el => ({
-                company: el.querySelector('.job-company').value,
-                title: el.querySelector('.job-title').value,
-                period: `${el.querySelector('.job-start').value} - ${el.querySelector('.job-end').value}`,
-                desc: el.querySelector('.job-desc').value
-            })),
+            jobs: Array.from(document.querySelectorAll('#jobsContainer .section-card')).map(el => {
+                const start = el.querySelector('.job-start').value;
+                const end = el.querySelector('.job-end').value;
+                return {
+                    company: el.querySelector('.job-company').value,
+                    title: el.querySelector('.job-title').value,
+                    start,
+                    end,
+                    period: `${start} - ${end}`,
+                    desc: el.querySelector('.job-desc').value
+                };
+            }),
             edu: Array.from(document.querySelectorAll('#eduContainer .section-card')).map(el => ({
                 school: el.querySelector('.edu-school').value,
                 degree: el.querySelector('.edu-degree').value,
@@ -223,7 +341,6 @@
         const margin = 20;
         const contentWidth = doc.internal.pageSize.width - (margin * 2);
 
-        // Helper to check page break
         const checkPageBreak = (heightNeeded) => {
             if (yPos + heightNeeded > pageHeight - margin) {
                 doc.addPage();
@@ -231,15 +348,13 @@
             }
         };
 
-        // --- OPTIONAL COVER LETTER ---
         if (document.getElementById('includeCoverLetter').checked) {
-            // Header
             doc.setFontSize(22);
             doc.setTextColor(...primaryColor);
             doc.setFont('helvetica', 'bold');
             doc.text(data.fullName, margin, yPos);
             yPos += 10;
-            
+
             doc.setFontSize(10);
             doc.setTextColor(...darkText);
             doc.setFont('helvetica', 'normal');
@@ -251,7 +366,6 @@
             doc.line(margin, yPos, margin + contentWidth, yPos);
             yPos += 20;
 
-            // Content
             const today = new Date().toLocaleDateString();
             const manager = document.getElementById('hiringManager').value;
             const company = document.getElementById('targetCompany').value;
@@ -264,19 +378,17 @@
 
             const splitBody = doc.splitTextToSize(body, contentWidth);
             doc.text(splitBody, margin, yPos);
-            
-            // Signature
+
             yPos += (splitBody.length * 5) + 20;
             doc.text("Sincerely,", margin, yPos);
             yPos += 10;
             doc.setFont('helvetica', 'bold');
             doc.text(data.fullName, margin, yPos);
 
-            doc.addPage(); // Start Resume on new page
+            doc.addPage();
             yPos = 20;
         }
 
-        // --- RESUME HEADER ---
         doc.setFontSize(24);
         doc.setTextColor(...primaryColor);
         doc.setFont('helvetica', 'bold');
@@ -294,13 +406,11 @@
         doc.text(data.contact, margin, yPos);
         yPos += 15;
 
-        // Line Divider
         doc.setLineWidth(1);
         doc.setDrawColor(...primaryColor);
         doc.line(margin, yPos, margin + contentWidth, yPos);
         yPos += 10;
 
-        // --- SUMMARY ---
         if (data.summary) {
             doc.setFontSize(12);
             doc.setTextColor(...primaryColor);
@@ -316,7 +426,6 @@
             yPos += (summaryLines.length * 5) + 5;
         }
 
-        // --- SKILLS ---
         if (data.skills) {
             checkPageBreak(20);
             doc.setFontSize(12);
@@ -333,7 +442,6 @@
             yPos += (skillLines.length * 5) + 5;
         }
 
-        // --- EXPERIENCE ---
         if (data.jobs.length > 0) {
             checkPageBreak(20);
             doc.setFontSize(12);
@@ -344,13 +452,12 @@
 
             data.jobs.forEach(job => {
                 checkPageBreak(30);
-                
-                // Job Header line
+
                 doc.setFontSize(11);
                 doc.setTextColor(0, 0, 0);
                 doc.setFont('helvetica', 'bold');
                 doc.text(job.company, margin, yPos);
-                
+
                 doc.setFont('helvetica', 'bold');
                 doc.text(job.period, margin + contentWidth, yPos, { align: 'right' });
                 yPos += 5;
@@ -360,7 +467,6 @@
                 doc.text(job.title, margin, yPos);
                 yPos += 6;
 
-                // Description
                 doc.setFont('helvetica', 'normal');
                 doc.setTextColor(0, 0, 0);
                 doc.setFontSize(10);
@@ -370,7 +476,6 @@
             });
         }
 
-        // --- EDUCATION ---
         if (data.edu.length > 0) {
             checkPageBreak(30);
             doc.setFontSize(12);
@@ -385,7 +490,7 @@
                 doc.setTextColor(0, 0, 0);
                 doc.setFont('helvetica', 'bold');
                 doc.text(edu.school, margin, yPos);
-                
+
                 doc.setFont('helvetica', 'normal');
                 doc.text(edu.year, margin + contentWidth, yPos, { align: 'right' });
                 yPos += 5;
@@ -397,8 +502,78 @@
             });
         }
 
-        doc.save(`${data.fullName.replace(/\s+/g, '_')}_Resume.pdf`);
+        const filename = `${data.fullName.replace(/\s+/g, '_')}_Resume.pdf`;
+        doc.save(filename);
+
+        const subject = encodeURIComponent(`Completed Intake for ${data.fullName}`);
+        const body = encodeURIComponent(`Hi there,%0D%0A%0D%0APlease find my completed intake attached. If the PDF didn't attach automatically, please attach ${filename} from your downloads.%0D%0A%0D%0AThank you!`);
+        setTimeout(() => {
+            if (confirm('Open your email app to send the completed intake?')) {
+                window.location.href = `mailto:${RESUME_WRITER_EMAIL}?subject=${subject}&body=${body}`;
+            }
+        }, 300);
     }
+
+    // --- 3. AI Prompt Builder ---
+    const buildPromptBtn = document.getElementById('buildPrompt');
+    const promptOutput = document.getElementById('promptOutput');
+    const copyPromptBtn = document.getElementById('copyPrompt');
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const ownerMode = urlParams.get('owner') === '1';
+    document.getElementById('ownerTools').classList.toggle('hidden', !ownerMode);
+
+    function collectFormData() {
+        return {
+            fullName: document.getElementById('fullName').value || '[Full Name]',
+            title: document.getElementById('targetTitle').value || '[Target Title]',
+            email: document.getElementById('email').value || '[Email]',
+            phone: document.getElementById('phone').value || '[Phone]',
+            link: document.getElementById('link').value || '[Link]',
+            summary: document.getElementById('summary').value || '[Professional summary]',
+            skills: document.getElementById('skills').value || '[Skills]',
+            jobs: Array.from(document.querySelectorAll('#jobsContainer .section-card')).map(el => {
+                const start = el.querySelector('.job-start').value || '[Start]';
+                const end = el.querySelector('.job-end').value || '[End]';
+                return {
+                    company: el.querySelector('.job-company').value || '[Company]',
+                    title: el.querySelector('.job-title').value || '[Job Title]',
+                    start,
+                    end,
+                    period: `${start} - ${end}`,
+                    desc: el.querySelector('.job-desc').value || '[Impact bullets]'
+                };
+            }),
+            edu: Array.from(document.querySelectorAll('#eduContainer .section-card')).map(el => ({
+                school: el.querySelector('.edu-school').value || '[School]',
+                degree: el.querySelector('.edu-degree').value || '[Degree]',
+                year: el.querySelector('.edu-year').value || '[Year]'
+            })),
+            includeCoverLetter: document.getElementById('includeCoverLetter').checked,
+            hiringManager: document.getElementById('hiringManager').value || 'Hiring Team',
+            targetCompany: document.getElementById('targetCompany').value || '',
+            clBody: document.getElementById('clBody').value || ''
+        };
+    }
+
+    function buildPrompt() {
+        const data = collectFormData();
+        const experienceText = data.jobs.map((job, idx) => `Job ${idx + 1}: ${job.title} at ${job.company} (${job.period})\n${job.desc}`).join('\n\n');
+        const eduText = data.edu.map((edu, idx) => `Education ${idx + 1}: ${edu.degree} — ${edu.school} (${edu.year})`).join('\n');
+
+        const prompt = `You are a senior resume writer. Using the client's answers, deliver TWO recruiter-approved resumes in one response: (1) ATS-optimized (clean single column, keyword rich, no graphics), and (2) a classic one-page minimal resume with thoughtful spacing. Keep both strictly one page and prefer accomplishment bullets with metrics.\n\nGuidelines:\n- Preserve contact header with: ${data.fullName} | ${data.email} | ${data.phone} | ${data.link}.\n- Align both resumes to the target title: ${data.title}.\n- Keep tone concise, action-driven, and tailored for recruiters.\n- Rewrite bullets to emphasize measurable impact, scope, and tools.\n- Use the summary and core skills verbatim but enhance clarity.\n\nClient responses (treat as ground truth):\nSummary: ${data.summary}\nCore skills: ${data.skills}\n${experienceText ? `Experience:\n${experienceText}\n` : ''}${eduText ? `Education:\n${eduText}` : ''}`;
+
+        promptOutput.value = prompt.trim();
+    }
+
+    buildPromptBtn.addEventListener('click', buildPrompt);
+
+    copyPromptBtn.addEventListener('click', () => {
+        promptOutput.select();
+        document.execCommand('copy');
+        copyPromptBtn.textContent = 'Copied!';
+        setTimeout(() => copyPromptBtn.textContent = 'Copy Prompt', 1500);
+    });
 </script>
 
 </body>
